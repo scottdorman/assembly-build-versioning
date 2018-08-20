@@ -14,7 +14,7 @@ All of the files mentioned in this post are available at https://github.com/scot
 
 ## Getting started
 
-To get started using this process, head over to the GitHub [repository](https://github.com/scottdorman/assembly-build-versioning) and copy all of the files there into your solution folder. You should end up with a `build` folder, a `Directory.build.props` file and a `common.props` at the root of your project tree, right alongside your solution.
+To get started using this process, head over to the GitHub [repository](https://github.com/scottdorman/assembly-build-versioning) and copy the `build` folder, the `Directory.Build.props`, `common.props`, and the `ReleaseNotes.xml` files into your solution folder.
 
 <div class="alert alert-info">
 If you already have a <code>Directory.build.props</code> file or a <code>common.props</code> file, you'll want to merge the contents together or take other steps to prevent your files from being overwritten while still including the files from this process.
