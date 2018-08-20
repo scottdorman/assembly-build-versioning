@@ -1,0 +1,165 @@
+﻿<!--
+***********************************************************************************************
+VersionUpdate.csproj
+
+WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+         created a backup copy. Incorrect changes to this file will make it
+         impossible to load or build your projects from the command-line or the IDE.
+
+Original file located at https://github.com/scottdorman/assembly-build-versioning
+***********************************************************************************************
+-->
+<Project Sdk="Microsoft.NET.Sdk" DefaultTargets="UpdateAssemblyVersionInfo">
+  <!--
+    ============================================================
+                                     VersionUpdate
+
+    Used as a project reference and responsible for updating
+    the assembly version information and updating the release
+    notes file with the version information.
+    ============================================================
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard1.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(SolutionDir)/common.props" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <IgnoreVersionUpdate>true</IgnoreVersionUpdate>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <!--
+      ==================================================================
+                                              UpdateAssemblyVersionInfo
+
+      Sets the $(VersionBuild) and $(VersionRevision) properties and
+      updates the $(BuildProps) file.
+      Also sets the $(VersionBuildDate) property and writes it to the
+      $(AssemblyBuildVersionFile) file.
+      ==================================================================
+  -->
+  <Target Name="UpdateAssemblyVersionInfo">
+    <GetVersionProperties>
+      <Output PropertyName="VersionBuild" TaskParameter="Build" />
+      <Output PropertyName="VersionRevision" TaskParameter="Revision" />
+      <Output PropertyName="VersionBuildDate" TaskParameter="BuildDate" />
+    </GetVersionProperties>
+    <Message Importance="high" Text="UpdateAssemblyVersionInfo: Setting assembly versions to $(Version)." />
+    <Message Importance="high" Text="UpdateAssemblyVersionInfo: Setting build date to $(VersionBuildDate)." />
+
+    <PropertyGroup>
+      <VersionBuild>$(VersionBuild)</VersionBuild>
+      <VersionRevision>$(VersionRevision)</VersionRevision>
+      <BuildDate>$(VersionBuildDate)</BuildDate>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <XmlConfigUpdates Include="build.props">
+        <XPath>//BuildDate</XPath>
+        <NewValue>$(BuildDate)</NewValue>
+      </XmlConfigUpdates>
+      <XmlConfigUpdates Include="build.props">
+        <XPath>//VersionBuild</XPath>
+        <NewValue>$(VersionBuild)</NewValue>
+      </XmlConfigUpdates>
+      <XmlConfigUpdates Include="build.props">
+        <XPath>//VersionRevision</XPath>
+        <NewValue>$(VersionRevision)</NewValue>
+      </XmlConfigUpdates>
+    </ItemGroup>
+    <XmlPoke XmlInputPath="$(BuildDir)\build.props" Query="%(XmlConfigUpdates.XPath)" Value="%(XmlConfigUpdates.NewValue)" />
+  </Target>
+
+ <!--
+      ==================================================================
+                                              UpdateReleaseNotes
+
+      Updates the release notes XML file and copies it to the
+      destination folders.
+      ==================================================================
+  -->
+  <Target Name="UpdateReleaseNotes" AfterTargets="UpdateAssemblyVersionInfo" Condition="'$(Configuration)' == 'Release' and '$(GenerateReleaseNotes)' == 'true'">
+    <Message Importance="high" Text="Updating release notes." />
+    <AddReleaseNotesRootEntry AddIfNotFound="true" Version="$(Version)" BuildDate="$(BuildDate)" File="%(ReleaseNotes.Identity)" />
+
+    <Copy SourceFiles="@(ReleaseNotes)" DestinationFolder="%(DestinationFolders.Identity)" />
+  </Target>
+
+  <!--
+      ==================================================================
+                                              GetVersionProperties
+
+      Returns the $(Build), $(Revision) and $(BuildDate) properties.
+      ==================================================================
+  -->
+  <UsingTask TaskName="GetVersionProperties" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <Build ParameterType="System.String" Output="true" />
+      <Revision ParameterType="System.String" Output="true" />
+      <BuildDate ParameterType="System.String" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+                var now = DateTime.Now;
+                BuildDate = now.ToString();
+                Build = String.Format("{0}{1}", now.Year % 100, now.DayOfYear);
+                Revision = ((int)((now - now.Date).TotalSeconds / 2)).ToString();
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <!--
+      ==================================================================
+                                              AddReleaseNotesRootEntry
+
+      Adds a new blank release notes entry node.
+      ==================================================================
+  -->
+  <UsingTask TaskName="AddReleaseNotesRootEntry" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <Version ParameterType="System.String" Output="false" />
+      <BuildDate ParameterType="System.String" Output="false" />
+      <AddIfNotFound ParameterType="System.Boolean" Output="false" />
+      <File ParameterType="System.String" Output="false" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="System.Xml" />
+      <Reference Include="System.Xml.Linq" />
+      <Using Namespace="System.Xml.Linq" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+            var document = XDocument.Load(File);
+            var entry = document.Root.Descendants("entry").Where(e => e.Attribute("version").Value == "vNext" || e.Attribute("version").Value == "").SingleOrDefault();
+            if (entry != null)
+            {
+               entry.Attribute("version").Value = Version;
+               entry.Attribute("build-date").Value = BuildDate;
+               document.Save(File);
+            }
+            else
+            {
+                if (AddIfNotFound == true)
+                {
+                    entry = new XElement("entry", new XAttribute("build-date", BuildDate), new XAttribute("version", Version), new XElement("content", new XElement("ul")));
+                    var commentTemplate = document.DescendantNodes().OfType<XComment>().FirstOrDefault();
+                    if (commentTemplate != null)
+                    {
+                        commentTemplate.AddAfterSelf(entry);
+                    }
+                    else
+                    {
+                        document.Root.AddFirst(entry);
+                    }
+                }
+            }
+       ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+</Project>

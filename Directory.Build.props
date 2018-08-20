@@ -1,0 +1,90 @@
+<!--
+***********************************************************************************************
+Directory.Build.props
+
+WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+         created a backup copy. Incorrect changes to this file will make it
+         impossible to load or build your projects from the command-line or the IDE.
+
+Original file located at https://github.com/scottdorman/assembly-build-versioning
+***********************************************************************************************
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <BuildDir>$(SolutionDir)build</BuildDir>
+  </PropertyGroup>
+
+  <Import Project="$(BuildDir)\build.props" Condition="Exists('$(BuildDir)\build.props')"/>
+  <Import Project="$(BuildDir)\version.props" Condition="Exists('$(BuildDir)\version.props')"/>
+  <Import Project="$(SolutionDir)\common.props" Condition="Exists('$(SolutionDir)\common.props')"/>
+
+  <PropertyGroup>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <VersionPrefix Condition="'$(VersionPrefix)' != ''">$(VersionPrefix).$(VersionBuild).$(VersionRevision)</VersionPrefix>
+    <VersionSuffix Condition="'$(VersionSuffix)' != '' AND '$(CI_BUILD_NUMBER)' != ''">$(VersionSuffix).$(CI_BUILD_NUMBER)</VersionSuffix>
+  </PropertyGroup>
+
+  <!--
+      ==================================================================
+      This is really a duplicated property group, taken from
+      Microsoft.NET.DefaultAssemblyInfo.targets, but is necessary so
+      that older style projects will get the proper version number.
+      ==================================================================
+  -->
+  <PropertyGroup Condition=" '$(Version)' == '' ">
+    <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">1.0.0</VersionPrefix>
+    <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix)-$(VersionSuffix)</Version>
+    <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)</Version>
+  </PropertyGroup>
+
+  <!--
+      ==================================================================
+      Adds the build date to the generated AssemblyInfo file, if the
+      project has the $(GenerateAssemblyInfo) property set to true.
+
+      This indirectly hooks in to the standard .NET SDK
+      GenerateAssemblyInfo target by using the same ItemGroup names
+      that GetAssemblyAttributes uses. This allows us to insert
+      additional assembly attributes in to the set that's used.
+      ==================================================================
+  -->
+  <PropertyGroup>
+     <GenerateAssemblyBuildDateAttribute Condition="'$(GenerateAssemblyBuildDateAttribute)' == ''">true</GenerateAssemblyBuildDateAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadata" Condition="'$(BuildDate)' != '' and '$(GenerateAssemblyBuildDateAttribute)' == 'true'">
+      <_Parameter1>BuildDate</_Parameter1>
+      <_Parameter2>$(BuildDate)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <!--
+      ==================================================================
+      Adds the VersionUpdate project as a reference to all projects
+      unless that project has the $(IgnoreVersionUpdate) property set.
+      By setting the ReferenceOutputAssembly to false, we ensure that
+      the build output from the VersionUpdate project isn't copied
+      in to the output of the consuming project (basically making this
+      a development/compile time dependency rather than a runtime one).
+      ==================================================================
+  -->
+  <ItemGroup Condition="'$(IgnoreVersionUpdate)' == ''" >
+    <ProjectReference Include="$(BuildDir)\VersionUpdate.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Name>VersionUpdate</Name>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!--
+      ==================================================================
+      Defines release notes related properties.
+      ==================================================================
+  -->
+  <PropertyGroup>
+    <GenerateReleaseNotes Condition="'$(GenerateReleaseNotes)' == ''">false</GenerateReleaseNotes>
+  </PropertyGroup>
+</Project>
