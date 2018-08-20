@@ -51,11 +51,12 @@ Original file located at https://github.com/scottdorman/assembly-build-versionin
 
   <!--
       ==================================================================
-      Defines release notes related properties.
+      Defines properties which help customize the version update process.
       ==================================================================
   -->
   <PropertyGroup>
-    <GenerateReleaseNotes>true</GenerateReleaseNotes>
+    <GenerateReleaseNotes Condition="'$(GenerateReleaseNotes)' == ''">false</GenerateReleaseNotes>
+    <GenerateAssemblyBuildDateAttribute Condition="'$(GenerateAssemblyBuildDateAttribute)' == ''">true</GenerateAssemblyBuildDateAttribute>
   </PropertyGroup>
 
   <!--
