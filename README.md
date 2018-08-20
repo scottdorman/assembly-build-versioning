@@ -52,9 +52,7 @@ A typical `common.props` file might look like
 ``` 
 Finally, add the `build\VersionUpdate.csproj` project to your solution.
 
-<div class="alert alert-info">
-This project needs to be added to your solution for the project references to work properly. Visual Studio automatically builds a <code>project.assets.json</code> file, and without it, the references don't seem to work reliably. <i>This is an issue with the MSBuild project references themselves, and not a limitation inherent in this process.</i>
-</div>
+> **Note:** This project needs to be added to your solution for the project references to work properly. Visual Studio automatically builds a `project.assets.json` file, and without it, the references don't seem to work reliably. *This is an issue with the MSBuild project references themselves, and not a limitation inherent in this process.*
 
 If there are projects you want to exclude from being automatically versioned, you can add the following property group to the project file:
 
@@ -156,6 +154,4 @@ The `VersionUpdate` project contains the `UpdateAssemblyVersionInfo` and `Update
 >    Condition=" '$(RoslynCodeTaskFactory)' != '' ">
 > ```
 
-<div class="alert alert-info">
-This project does need to be added to your solution for the project references to work properly. Visual Studio automatically builds a <code>project.assets.json</code> file, and without it, the references don't seem to work reliably. <i>This is an issue with the MSBuild project references themselves, and not a limitation inherent in this process.</i>
-</div>
+> **Note:** This project does need to be added to your solution for the project references to work properly. Visual Studio automatically builds a `project.assets.json` file, and without it, the references don't seem to work reliably. *This is an issue with the MSBuild project references themselves, and not a limitation inherent in this process.*
