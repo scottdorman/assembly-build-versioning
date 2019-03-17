@@ -17,6 +17,7 @@ Original file located at https://github.com/scottdorman/assembly-build-versionin
   <Import Project="$(BuildDir)\build.props" Condition="Exists('$(BuildDir)\build.props')"/>
   <Import Project="$(BuildDir)\version.props" Condition="Exists('$(BuildDir)\version.props')"/>
   <Import Project="$(SolutionDir)\common.props" Condition="Exists('$(SolutionDir)\common.props')"/>
+  <Import Project="$(SolutionDir)\misc.props" Condition="Exists('$(SolutionDir)\misc.props')"/>
 
   <PropertyGroup>
     <DebugType>embedded</DebugType>

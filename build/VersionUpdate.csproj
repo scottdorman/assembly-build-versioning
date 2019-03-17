@@ -27,6 +27,10 @@ Original file located at https://github.com/scottdorman/assembly-build-versionin
     <None Include="$(SolutionDir)/common.props" />
   </ItemGroup>
 
+  <ItemGroup Condition="Exists('$(SolutionDir)\misc.props')">
+    <None Include="$(SolutionDir)/misc.props" />
+  </ItemGroup>
+
   <PropertyGroup>
     <IgnoreVersionUpdate>true</IgnoreVersionUpdate>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
