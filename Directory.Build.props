@@ -75,13 +75,4 @@ Original file located at https://github.com/scottdorman/assembly-build-versionin
       <Name>VersionUpdate</Name>
     </ProjectReference>
   </ItemGroup>
-
-  <!--
-      ==================================================================
-      Defines release notes related properties.
-      ==================================================================
-  -->
-  <PropertyGroup>
-    <GenerateReleaseNotes Condition="'$(GenerateReleaseNotes)' == ''">false</GenerateReleaseNotes>
-  </PropertyGroup>
-</Project>
+</<Project>
