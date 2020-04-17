@@ -1,10 +1,3 @@
----
-layout: post
-title: .NET Core project versioning updates
-date: '2020-04-17 17:20:00 -05:00'
-tags: .net .net-core msbuild continuous-integration continuous-delivery
----
-
 About two years ago I [talked]({% post_url /2018/2018-08-19-net-core-project-versioning %}) about a way to create consistent version numbers across .NET Core and .NET Framework projects. At the time, I thought the approach I'd come up with was fairly easy to use and didn't require much modification to your projects.
 
 At the end of March 2020, GitHub announced [public availability of GitHub Actions](https://github.blog/changelog/2020-03-24-github-actions-api-is-now-generally-available/). While it isn't as full-featured as other continuous integration/continuous-delivery (CI/CD) tools out there, like AppVeyor and Jenkins, it doesn't require any additional accounts to set up, does the job adequately well for some of the more common scenarios, and seems to steadily be getting better and more full-featured.
