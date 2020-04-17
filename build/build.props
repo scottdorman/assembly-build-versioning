@@ -1,8 +1,0 @@
-<!-- This file may be overwritten by automation. -->
-<Project>
-  <PropertyGroup>
-    <BuildDate>8/11/2018 10:40:14 PM</BuildDate>
-    <VersionBuild Condition="'$(VersionBuild)' == ''">18223</VersionBuild>
-    <VersionRevision Condition="'$(VersionRevision)' == ''">40807</VersionRevision>
-  </PropertyGroup>
-</Project>

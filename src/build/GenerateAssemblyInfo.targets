@@ -1,26 +1,27 @@
 ﻿<!--
-***********************************************************************************************
-GenerateAssemblyInfo.targets
-
 WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
          created a backup copy. Incorrect changes to this file will make it
          impossible to load or build your projects from the command-line or the IDE.
-
-Original file located at https://github.com/scottdorman/assembly-build-versioning
-***********************************************************************************************
 -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!--
-    ============================================================
-                                     GenerateAssemblyInfo
+  <PropertyGroup>
+    <BuildDir>$(SolutionDir)/build</BuildDir>
+  </PropertyGroup>
 
-    Generates assembly info source to intermediate directory
-    
-    This is, for the most part, a copy of the
-    Microsoft.NET.GenerateAssemblyInfo.targets file from the
-    .NET SDK. It's only used for older style project files.
-    ============================================================
+  <PropertyGroup>
+    <VersionUpdateTasksLib Condition="'$(OS)' == 'Windows_NT'">$([MSBUILD]::Unescape($(BuildDir)\Cadru.Build.Tasks.dll))</VersionUpdateTasksLib>
+    <VersionUpdateTasksLib Condition="'$(OS)' != 'Windows_NT'">$(BuildDir)\Cadru.Build.Tasks.dll</VersionUpdateTasksLib>
+  </PropertyGroup>
+
+  <UsingTask AssemblyFile="$(VersionUpdateTasksLib)" TaskName="Cadru.Build.Tasks.GetVersionProperties" />
+  <UsingTask AssemblyFile="$(VersionUpdateTasksLib)" TaskName="Cadru.Build.Tasks.GetAssemblyVersion" />
+  <UsingTask AssemblyFile="$(VersionUpdateTasksLib)" TaskName="Cadru.Build.Tasks.AddReleaseNotesRootEntry" />
+
+  <!-- Generates assembly info source to an intermediate directory. This is,
+  for the most part, a copy of the Microsoft.NET.GenerateAssemblyInfo.targets
+  file from the .NET SDK. It's only used for older style project files.
   -->
+
   <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     <GeneratedAssemblyInfoFile Condition="'$(GeneratedAssemblyInfoFile)' ==''">$(IntermediateOutputPath)$(MSBuildProjectName).AssemblyInfo$(DefaultLanguageSourceExtension)</GeneratedAssemblyInfoFile>
@@ -48,13 +49,12 @@ Original file located at https://github.com/scottdorman/assembly-build-versionin
     <IncludeSourceRevisionInInformationalVersion Condition="'$(IncludeSourceRevisionInInformationalVersion)' == ''">true</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
-  <!-- 
-    Note that this must run before every invocation of CoreCompile to ensure that all compiler
-    runs see the generated assembly info. There is at least one scenario involving Xaml 
-    where CoreCompile is invoked without other potential hooks such as Compile or CoreBuild,
-    etc., so we hook directly on to CoreCompile. Furthermore, we  must run *after* 
-    PrepareForBuild to ensure that the intermediate directory has been created.
-  -->
+  <!-- Note that this must run before every invocation of CoreCompile to ensure
+  that all compiler runs see the generated assembly info. There is at least one
+  scenario involving Xaml where CoreCompile is invoked without other potential
+  hooks such as Compile or CoreBuild, etc., so we hook directly on to
+  CoreCompile. Furthermore, we  must run *after* PrepareForBuild to ensure that
+  the intermediate directory has been created. -->
   <Target Name="GenerateAssemblyInfo"
           BeforeTargets="CoreCompile"
           DependsOnTargets="PrepareForBuild;CoreGenerateAssemblyInfo"
@@ -109,11 +109,11 @@ Original file located at https://github.com/scottdorman/assembly-build-versionin
     </ItemGroup>
   </Target>
 
-  <!-- 
-    To allow version changes to be respected on incremental builds (e.g. through CLI parameters),
-    create a hash of all assembly attributes so that the cache file will change with the calculated
-    assembly attribute values and msbuild will then execute CoreGenerateAssembly to generate a new file.
-  -->
+  <!-- To allow version changes to be respected on incremental builds
+  (e.g. through CLI parameters), create a hash of all assembly attributes so
+  that the cache file will change with the calculated assembly attribute
+  values and msbuild will then execute CoreGenerateAssembly to generate a
+  new file. -->
   <Target Name="CreateGeneratedAssemblyInfoInputsCacheFile"
           DependsOnTargets="GetAssemblyAttributes">
     <PropertyGroup>
@@ -126,7 +126,7 @@ Original file located at https://github.com/scottdorman/assembly-build-versionin
     </Hash>
 
     <WriteLinesToFile Lines="$(_AssemblyAttributesHash)" File="$(GeneratedAssemblyInfoInputsCacheFile)" Overwrite="True" WriteOnlyWhenDifferent="True" />
-    
+
     <ItemGroup>
       <FileWrites Include="$(GeneratedAssemblyInfoInputsCacheFile)" />
     </ItemGroup>
@@ -149,12 +149,8 @@ Original file located at https://github.com/scottdorman/assembly-build-versionin
   </Target>
 
 
-  <!--
-    ==================================================================
-                                            GetAssemblyVersion
-
-    Parses the nuget package version set in $(Version) and returns
-    the implied $(AssemblyVersion) and $(FileVersion).
+  <!-- Parses the nuget package version set in $(Version) and returns the
+  implied $(AssemblyVersion) and $(FileVersion).
 
     e.g.:
         <Version>1.2.3-beta.4</Version>
@@ -163,34 +159,23 @@ Original file located at https://github.com/scottdorman/assembly-build-versionin
         <AssemblyVersion>1.2.3</AssemblyVersion>
         <FileVersion>1.2.3</FileVersion>
 
-    Note that if $(AssemblyVersion) or $(FileVersion) are are already set, it
-    is considered an override of the default inference from $(Version) and they
-    are left unchanged by this target.
-    ==================================================================
-  -->
+  Note that if $(AssemblyVersion) or $(FileVersion) are already set, it
+  is considered an override of the default inference from $(Version) and they
+  are left unchanged by this target. -->
   <Target Name="GetAssemblyVersion">
+      <PropertyGroup>
+        <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">1.0.0</VersionPrefix>
+        <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix)-$(VersionSuffix)</Version>
+        <Version>$(VersionPrefix)</Version>
+      </PropertyGroup>
+
     <GetAssemblyVersion Condition="'$(AssemblyVersion)' == ''" NuGetVersion="$(Version)">
       <Output TaskParameter="AssemblyVersion" PropertyName="AssemblyVersion" />
     </GetAssemblyVersion>
-    
+
     <PropertyGroup>
       <FileVersion Condition="'$(FileVersion)' == ''">$(AssemblyVersion)</FileVersion>
       <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(Version)</InformationalVersion>
     </PropertyGroup>
   </Target>
-  
-  <UsingTask TaskName="GetAssemblyVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
-    <ParameterGroup>
-      <NuGetVersion ParameterType="System.String" Required="true" />
-      <AssemblyVersion ParameterType="System.String" Output="true" />
-    </ParameterGroup>
-    <Task>
-      <Code Type="Fragment" Language="cs">
-        <![CDATA[
-                var args = NuGetVersion.Split('-');
-                AssemblyVersion = args[0];
-        ]]>
-      </Code>
-    </Task>
-  </UsingTask>  
 </Project>

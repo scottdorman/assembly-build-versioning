@@ -1,153 +1,71 @@
-# assembly-build-versioning
+---
+layout: post
+title: .NET Core project versioning updates
+date: '2020-04-17 17:20:00 -05:00'
+tags: .net .net-core msbuild continuous-integration continuous-delivery
+---
 
-Visual Studio has always allowed you to specify a version number for your .NET projects using the `[assembly:AssemblyVersionAttribute("2.0.1")]` syntax, usually in an `AssemblyInfo.cs` file. You can even use some special syntax to generate the build or revision number automatically.
+About two years ago I [talked]({% post_url /2018/2018-08-19-net-core-project-versioning %}) about a way to create consistent version numbers across .NET Core and .NET Framework projects. At the time, I thought the approach I'd come up with was fairly easy to use and didn't require much modification to your projects.
 
-> You can specify all the values or you can accept the default build number, revision number, or both by using an asterisk (\*). For example, [assembly:AssemblyVersion("2.3.25.1")] indicates 2 as the major version, 3 as the minor version, 25 as the build number, and 1 as the revision number. A version number such as [assembly:AssemblyVersion("1.2.\*")] specifies 1 as the major version, 2 as the minor version, and accepts the default build and revision numbers. A version number such as [assembly:AssemblyVersion("1.2.15.\*")] specifies 1 as the major version, 2 as the minor version, 15 as the build number, and accepts the default revision number. The default build number increments daily. The default revision number is the number of seconds since midnight local time (without taking into account time zone adjustments for daylight saving time), divided by 2. *(See the [AssemblyVersionAttribute Class](https://docs.microsoft.com/en-us/dotnet/api/system.reflection.assemblyversionattribute?view=netframework-4.7.1) documentation.)*
+At the end of March 2020, GitHub announced [public availability of GitHub Actions](https://github.blog/changelog/2020-03-24-github-actions-api-is-now-generally-available/). While it isn't as full-featured as other continuous integration/continuous-delivery (CI/CD) tools out there, like AppVeyor and Jenkins, it doesn't require any additional accounts to set up, does the job adequately well for some of the more common scenarios, and seems to steadily be getting better and more full-featured.
 
-While this approach is convenient, it's not very flexible and doesn't provide you with a meaningful version number. Over the years, there have been numerous attempts at solving the problem of automatically versioning .NET assemblies. While these approaches work, and some are very flexible, they aren't always a simple answer.
+I've setup build actions for two private repositories I work in, and after understanding how the build environments work and playing around with some of the projects in one of the repositories, I decided to revisit my assembly versioning setup.
 
-When .NET Core was introduced, it brought along some much-needed improvements to MSBuild and the project file format. We can now leverage these improvements to create a relatively simple way to achieve a consistent version number across all projects in a solution, even if your solution has a mixture of .NET Core and regular projects.
+This time around, it takes advantage of the actions workflow and requires even less changes to your projects.
 
-I use this solution in two of my production projects at the moment and am in the process of updating the remainder of my projects to use it as well.
+One of the main changes is that the code tasks have now been moved into a compiled assembly that will become part of my Cadru Framework. This allows it to fully run from the command line through calling the `dotnet` command line tooling. The second major change is that it no longer requires you to add a project to your solution to try and hook into the build process. Since there wasn't a reliable way to insert the target into the process of building the solution, it ended up running for each project. While this generally didn't cause much issue, it would sometimes result in slightly different version numbers.
 
-All of the files mentioned in this post are available at https://github.com/scottdorman/assembly-build-versioning, so I'm only going to show relevant portions of some of them here.
+Just like with the earlier implementation, head over to the GitHub [repository](https://github.com/scottdorman/assembly-build-versioning) and copy the contents of `src` folder (not the folder itself, just what's in it) into your solution folder. If you don't want the task to update a release notes XML file, you can delete the `ReleaseNotes.xml` file. Although the files have changed slightly from their earlier versions, they still work pretty much the same way.
 
-## Getting started
+> The original implementation is still there, but it's under a `v1.0` branch. The `master` branch is the latest version, 2.0.
 
-To get started using this process, head over to the GitHub [repository](https://github.com/scottdorman/assembly-build-versioning) and copy the `build` folder, the `Directory.Build.props`, `common.props`, and the `ReleaseNotes.xml` files into your solution folder.
+The `Directory.Build.props` file adds new properties and item groups to every project, and defines some of the common properties used. It also imports the other properties files. There really isn't a need to change this file.
 
-> **Note:** If you already have a `Directory.build.props` file or a `common.props` file, you'll want to merge the contents together or take other steps to prevent your files from being overwritten while still including the files from this process.
+The `common.props` file is where you can define the standard assembly and NuGet package properties, like product, company, copyright, and authors. You can also define the version number properties here as well.
 
-Next, update the relevant properties in the `common.props` file.
+Everything else about the process still lives in the `build` folder, by default. (You can change it, but doing so will require you to change some of the core targets files, so I'd suggest just leaving it where it is.) This is also where things start to change with the new implementation.
 
-A typical `common.props` file might look like 
+The first change is that `build.props` has been renamed to `version.props`. I think this name makes more sense. The name of the properties in it has also changed. A typical file looks like
 
-```xml
+```XML
 <Project>
   <PropertyGroup>
-    <Product>WebApp</Product>
-    <Company></Company>
-    <Copyright>Copyright (c) 2018</Copyright>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <VersionMajor>1</VersionMajor>
-    <VersionMinor>1</VersionMinor>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <VersionPrefix>$(VersionMajor).$(VersionMinor)</VersionPrefix>
-    <VersionSuffix>preview</VersionSuffix>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <GenerateReleaseNotes Condition="'$(GenerateReleaseNotes)' == ''">false</GenerateReleaseNotes>
-    <GenerateAssemblyBuildDateAttribute Condition="'$(GenerateAssemblyBuildDateAttribute)' == ''">true</GenerateAssemblyBuildDateAttribute>
+    <BuildDate>4/17/2020 8:09:02 AM</BuildDate>
+    <VersionPatch>20217</VersionPatch>
+    <VersionRevision>36371</VersionRevision>
   </PropertyGroup>
 </Project>
-``` 
-Finally, add the `build\VersionUpdate.csproj` project to your solution.
+```
 
-> **Note:** This project needs to be added to your solution for the project references to work properly. Visual Studio automatically builds a `project.assets.json` file, and without it, the references don't seem to work reliably. *This is an issue with the MSBuild project references themselves, and not a limitation inherent in this process.*
+This file is updated once by calling `dotnet build /build/Cadru.VersionUpdate.targets -t:UpdateAssemblyVersionInfo`. That task sets the build date and computes the patch and revision numbers. Since this file is imported before `common.props`, if you set one of those properties there, the value here will be overridden.
 
-If there are projects you want to exclude from being automatically versioned, you can add the following property group to the project file:
+> The version numbering scheme is loosely based on what's done in [Arcade](https://github.com/dotnet/arcade) and is described in the [.NET Core Ecosystem v2 - Versioning](https://github.com/dotnet/arcade/blob/master/Documentation/CorePackages/Versioning.md) document.
 
-```xml
+Since this file is updated "out of band" from compiling the rest of the code, it ensures that all of the projects will pick up the same version information when they're compiled.
+
+To update a release notes file, you just need to set the `GenerateReleaseNotes` property in `common.props` to `true` and then uncomment and provide values for the item group. Remember, it's still somewhat opinionated on the format and is designed to work with an XML file. The version related properties are available to you in MSBuild, though, so if you wanted to write your own target to update a release notes file, you can look at the `UpdateReleaseNotes` in `Vadru.VersionUpdate.Targets` and update it as necessary.
+
+If you only have .NET Core projects, you're done. If you have older .NET Framework projects, you need to add the following somewhere in the project file. (I'd suggest just adding it at the end.)
+
+```XML
+ <PropertyGroup>
+   <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+ </PropertyGroup>
+ <Import Project="$(BuildDir)\GenerateAssemblyInfo.targets"> Condition="Exists('$(BuildDir)\GenerateAssemblyInfo.targets')" />
+```
+
+If there are .NET Core projects you don't want automatically versioned, you can opt them out by adding the following property group to the project file.
+
+```XML
 <PropertyGroup>
     <IgnoreVersionUpdate>true</IgnoreVersionUpdate>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 ```
 
-If you have older projects that you want to include in this process, you just need to add the following import to the project file:
-```xml
-<Import Project="$(BuildDir)\GenerateAssemblyInfo.targets" Condition="Exists('$(BuildDir)\GenerateAssemblyInfo.targets')" /> 
-```
-
-### Updating release notes
-
-*This section is somewhat opinionated on the format of the release notes and the file type and is designed to work with an XML file for the release notes. If you want to change this, you would need to update the `AddReleaseNotesRootEntry` task and most likely the `UpdateReleaseNotes` target in `VersionUpdate.csproj`.*
-
-
-If you want to maintain a release notes file by hand, typically to display to the end user, it can be helpful to include both the version number and build date at the start of each section. The default process uses a release notes XML file which looks like:
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<notes>
-  <!--
-  <entry version="" build-date="">
-    <content>
-      <ul>
-        <li></li>
-      </ul>
-    </content>
-  </entry>
-  -->
-</notes>
-```
-
-When the `UpdateReleaseNotes` target runs, it looks for the first `<entry>` element (that isn't in a comment) where the `version` attribute is blank (or is the value `vNext`) and fills in values for both the `version` and the `build-date` attributes.
-
-The rest of the content is up to you.
-
-## How it works
-
-If you want to know the details of how this approach works, this section is for you.
-
-### MSBuild props and targets files
-
-It all starts with the `Directory.build.props` file. Starting with MSBuild 15, you can use this file to add new properties and item groups to every project. For our purposes, we want this file to be in the root solution folder. *(For more information, see [Customize your build](https://docs.microsoft.com/en-us/visualstudio/msbuild/customize-your-build))*
-
-This file defines some common properties, imports the other properties files, and adds the `VersionUpdate` project to all of the other projects in the solution. There isn't much reason to change this file.
-
-The `common.props` file defines common/shared assembly and NuGet package metadata. Here is where you can define the standard assembly and NuGet package properties, like the product, company, copyright, and authors. You can also define the major and minor version number, the version prefix and version suffix properties.
-
-By default, this approach uses the `build` folder for the `build.props`, `GenerateAssemblyInfo.targets`, `VersionUpdate.csproj`, and optionally the `version.props` files. If you want to change it to something else, be sure to change the `BuildDir` property in `Directory.build.props`, although I recommend leaving it as the default.
-
-This process automatically updates the `build.props` file, which contains the build date, build, and revision numbers used by the final version information. A continuous integration (CI) build process might insert the CI build number into this file as well. 
-
-A typical `build.props` file would look like
-
-```xml
-<!-- This file may be overwritten by automation. -->
-<Project>
-  <PropertyGroup>
-    <BuildDate>8/16/2018 2:02:35 PM</BuildDate>
-    <VersionBuild Condition="'$(VersionBuild)' == ''">18228</VersionBuild>
-    <VersionRevision Condition="'$(VersionRevision)' == ''">25277</VersionRevision>
-    <CI_BUILD_NUMBER>171</CI_BUILD_NUMBER>
-  </PropertyGroup>
-</Project>
-```
-
-By default, this approach assumes a property named `CI_BUILD_NUMBER`. If your CI system sets a different MSBuild property, you can either update `Directory.build.props` and change the property name or simply set the `CI_BUILD_NUMBER` property value to the property used by your CI system.
-
-> For example, if you use [AppVeyor](https://www.appveyor.com/) as your CI system, it uses `APPVEYOR_BUILD_NUMBER`, so you can change the `CI_BUILD_NUMBER` property to be 
->
-> ```xml
-> <CI_BUILD_NUMBER>$(APPVEYOR_BUILD_NUMBER)</CI_BUILD_NUMBER>
-> ```
-
-If instead, you want to write the version information into a separate file, you can use a `version.props` file, which if it exists, is automatically imported. 
-
-The `GenerateAssemblyInfo.targets` file, used only by older project files, is mostly a copy of the targets file used when compiling a .NET Core project and is responsible for generating the `SolutionInfo.cs` file that gets included into your project at compile time.
-
-### The `VersionUpdate` project
-The `VersionUpdate` project contains the `UpdateAssemblyVersionInfo` and `UpdateReleaseNotes` targets and also the associated tasks used by those targets.
-
-> This project uses the `CodeTaskFactory` so the tasks can be defined inside the project and not require a separate assembly. If you're building with the .NET CLI or on a non-Windows platform, this project won't build (see this [comment](https://github.com/Microsoft/msbuild/issues/616#issuecomment-219258405)). You can install the [RoslynCodeTaskFactory ](https://github.com/jeffkl/RoslynCodeTaskFactory) or upgrade to Visual Studio 15.8 if you need that support. Doing so would change the `UsingTask` elements from
->
-> ```xml
-> <UsingTask TaskName="AddReleaseNotesRootEntry" 
->    TaskFactory="CodeTaskFactory" 
->    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
-> ```
-> to
-> ```xml
-> <UsingTask TaskName="AddReleaseNotesRootEntry"  
->    TaskFactory="CodeTaskFactory"  
->    AssemblyFile="$(RoslynCodeTaskFactory)"
->    Condition=" '$(RoslynCodeTaskFactory)' != '' ">
-> ```
-
-> **Note:** This project does need to be added to your solution for the project references to work properly. Visual Studio automatically builds a `project.assets.json` file, and without it, the references don't seem to work reliably. *This is an issue with the MSBuild project references themselves, and not a limitation inherent in this process.*
+## Planned improvements
+Now that I've simplified how things work, there are definitely some improvements I want to make.
+- Add additional versioning strategies. Right now, there are two, both of which are date-based.
+- Add more flexibility in the creating a variant of the `version.props` file in different formats. I can see plain text and JSON formatted right now, possibly some other formats later on.
+- Improve task logging and output
+- Add more flexibility for updating a release notes document, possibly different formats as well.

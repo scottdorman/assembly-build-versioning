@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <notes>
   <!--
-  <entry build-date="" version="">
+  <entry build-date="" version="" milestone="">
     <content>
       <ul>
         <li></li>
       </ul>
     </content>
+    <knownIssues>
+        <ul>
+        </ul>
+    </knownIssues>
   </entry>
   -->
 </notes>
