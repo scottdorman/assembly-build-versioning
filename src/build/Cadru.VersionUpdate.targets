@@ -6,13 +6,12 @@ IDE. -->
   DefaultTarget="UpdateAssemblyVersionInfo">
   <PropertyGroup>
     <RepoRelativeProjectDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), 'common.props'))</RepoRelativeProjectDir>
-    <RepoRelativeProjectDir>$([MSBuild]::EnsureTrailingSlash($(RepoRelativeProjectDir)))</RepoRelativeProjectDir>
     <BuildDir>$(MSBuildThisFileDirectory)</BuildDir>
-    <VersionProps>$(BuildDir)version.props</VersionProps>
-    <CommonProps>$(RepoRelativeProjectDir)common.props</CommonProps>
+    <BuildProps>$(BuildDir)\build.props</BuildProps>
+    <CommonProps>$(RepoRelativeProjectDir)\common.props</CommonProps>
   </PropertyGroup>
 
-  <Import Project="$(VersionProps)" Condition="Exists('$(VersionProps)')"/>
+  <Import Project="$(BuildProps)" Condition="Exists('$(BuildProps)')"/>
   <Import Project="$(CommonProps)" Condition="Exists('$(CommonProps)')"/>
 
   <PropertyGroup>
@@ -26,14 +25,14 @@ IDE. -->
   <!-- Sets the BuildDate, VersionPatch, and VersionRevision properties in the
        $(VersionProps) file. -->
   <Target Name="UpdateAssemblyVersionInfo"
-          Outputs="$(VersionProps);$(GeneratedAssemblyInfoFile)">
-    <GetVersionProperties PropertiesFile="$(VersionProps)" Strategy="$(VersionStrategy)">
-      <Output PropertyName="VersionPatch" TaskParameter="Patch" />
+          Outputs="$(BuildProps);$(GeneratedAssemblyInfoFile)">
+    <GetVersionProperties PropertiesFile="$(BuildProps)" Strategy="$(VersionStrategy)">
+      <Output PropertyName="VersionBuild" TaskParameter="Build" />
       <Output PropertyName="VersionRevision" TaskParameter="Revision" />
       <Output PropertyName="VersionBuildDate" TaskParameter="BuildDate" />
     </GetVersionProperties>
 
-    <Message Importance="high" Text="UpdateAssemblyVersionInfo: VersionPatch = $(VersionPatch)" />
+    <Message Importance="high" Text="UpdateAssemblyVersionInfo: VersionBuild = $(VersionBuild)" />
     <Message Importance="high" Text="UpdateAssemblyVersionInfo: VersionRevision = $(VersionRevision)" />
     <Message Importance="high" Text="UpdateAssemblyVersionInfo: VersionBuildDate = $(VersionBuildDate)" />
   </Target>
