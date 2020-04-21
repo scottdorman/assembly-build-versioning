@@ -1,15 +1,19 @@
-﻿<!--
-WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
-         created a backup copy. Incorrect changes to this file will make it
-         impossible to load or build your projects from the command-line or the IDE.
--->
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTarget="UpdateAssemblyVersionInfo">
+<!-- WARNING: DO NOT MODIFY this file unless you are knowledgeable about
+MSBuild and have created a backup copy. Incorrect changes to this file will
+make it impossible to load or build your projects from the command-line or the
+IDE. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+  DefaultTarget="UpdateAssemblyVersionInfo">
   <PropertyGroup>
-    <BuildDir>$(MSBuildProjectDirectory)</BuildDir>
-    <VersionProps>$(BuildDir)\version.props</VersionProps>
+    <RepoRelativeProjectDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), 'common.props'))</RepoRelativeProjectDir>
+    <RepoRelativeProjectDir>$([MSBuild]::EnsureTrailingSlash($(RepoRelativeProjectDir)))</RepoRelativeProjectDir>
+    <BuildDir>$(MSBuildThisFileDirectory)</BuildDir>
+    <VersionProps>$(BuildDir)version.props</VersionProps>
+    <CommonProps>$(RepoRelativeProjectDir)common.props</CommonProps>
   </PropertyGroup>
 
   <Import Project="$(VersionProps)" Condition="Exists('$(VersionProps)')"/>
+  <Import Project="$(CommonProps)" Condition="Exists('$(CommonProps)')"/>
 
   <PropertyGroup>
     <VersionUpdateTasksLib Condition="'$(OS)' == 'Windows_NT'">$([MSBUILD]::Unescape($(BuildDir)\Cadru.Build.Tasks.dll))</VersionUpdateTasksLib>
@@ -17,16 +21,13 @@ WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and 
   </PropertyGroup>
 
   <UsingTask AssemblyFile="$(VersionUpdateTasksLib)" TaskName="Cadru.Build.Tasks.GetVersionProperties" />
-  <UsingTask AssemblyFile="$(VersionUpdateTasksLib)" TaskName="Cadru.Build.Tasks.GetAssemblyVersion" />
   <UsingTask AssemblyFile="$(VersionUpdateTasksLib)" TaskName="Cadru.Build.Tasks.AddReleaseNotesRootEntry" />
 
-  <!--
-      Sets the BuildDate, VersionPatch, and VersionRevision properties in the
-      $(VersionProps) file.
-  -->
+  <!-- Sets the BuildDate, VersionPatch, and VersionRevision properties in the
+       $(VersionProps) file. -->
   <Target Name="UpdateAssemblyVersionInfo"
           Outputs="$(VersionProps);$(GeneratedAssemblyInfoFile)">
-    <GetVersionProperties PropertiesFile="$(VersionProps)">
+    <GetVersionProperties PropertiesFile="$(VersionProps)" Strategy="$(VersionStrategy)">
       <Output PropertyName="VersionPatch" TaskParameter="Patch" />
       <Output PropertyName="VersionRevision" TaskParameter="Revision" />
       <Output PropertyName="VersionBuildDate" TaskParameter="BuildDate" />
@@ -36,14 +37,11 @@ WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and 
     <Message Importance="high" Text="UpdateAssemblyVersionInfo: VersionRevision = $(VersionRevision)" />
     <Message Importance="high" Text="UpdateAssemblyVersionInfo: VersionBuildDate = $(VersionBuildDate)" />
   </Target>
-  
+
   <!-- Updates the release notes XML file and copies it to the destination
        folders. -->
-   <Target Name="UpdateReleaseNotes" AfterTargets="UpdateAssemblyVersionInfo" Condition="'$(Configuration)' == 'Release' and '$(GenerateReleaseNotes)' == 'true'">
-      <Message Importance="high" Text="Updating release notes." />
-      <AddReleaseNotesRootEntry AddIfNotFound="true" Version="$(Version)" BuildDate="$(BuildDate)" Milestone="$(Milestone)" File="%(ReleaseNotes.Identity)" />
-  
-      <Copy SourceFiles="@(ReleaseNotes)" DestinationFolder="%(DestinationFolders.Identity)" />
-    </Target>
-
+  <Target Name="UpdateReleaseNotes" AfterTargets="UpdateAssemblyVersionInfo" Condition="'$(Configuration)' == 'Release' and '$(GenerateReleaseNotes)' == 'true'">
+    <AddReleaseNotesRootEntry AddIfNotFound="true" Version="$(Version)" BuildDate="$(BuildDate)" Milestone="$(Milestone)" File="%(ReleaseNotes.Identity)" />
+    <Copy SourceFiles="@(ReleaseNotes)" DestinationFolder="%(DestinationFolders.Identity)" />
+  </Target>
 </Project>

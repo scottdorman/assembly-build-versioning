@@ -1,47 +1,58 @@
-<!--
-Modify this file to change assembly information.
+<!-- Modify this file to change assembly information.
 
-WARNING: DO NOT MODIFY this file unless you have created a backup copy. Incorrect changes to
-this file will make it impossible to load or build your projects from the command-line or the
-IDE.
--->
+WARNING: DO NOT MODIFY this file unless you have created a backup copy.
+Incorrect changes to this file will make it impossible to load or build your
+projects from the command-line or the IDE. -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- Defines common/shared assembly and NuGet package metadata. -->
+  <!-- Defines common/shared assembly and NuGet package metadata. Typical
+  properties are:
+        $(Product)
+        $(Company)
+        $(Copyright)
+  -->
   <PropertyGroup>
-    <Product>SABOL Web</Product>
-    <Company>Siemens</Company>
-    <Copyright>Copyright (c) 2015</Copyright>
   </PropertyGroup>
 
-  <!-- Defines version related properties. -->
+  <!-- Defines version related properties. The possible properties are:
+
+          $(VersionMajor)
+          $(VersionMinor)
+          $(VersionPatch)
+          $(VersionRevision)
+          $(VersionPrefix)
+          $(VersionSuffix)
+          $(PackageVersion)
+          $(SourceRevisionId)
+          $(BuildDate)
+
+  Typically, you will only set the $(VersionMajor), $(VersionMinor), and
+  possibly the $(VersionSuffix) properties here. Any of the remaining
+  properties are either derived from those or would be set by an automated (CI)
+  build process in the build/version.props file.
+
+  By default, $(VersionPrefix) is set to be equal to $(VersionMajor).$(VersionMinor).$(VersionPatch), and defaults to 1.0.0.
+  If $(VersionRevision) is provided, it is appended to $(VersionPrefix) as
+  $(VersionPrefix).$(VersionRevision).
+
+  Any properties defined in the build/version.props file will override the
+  values specified here. -->
   <PropertyGroup>
-    <VersionMajor>2</VersionMajor>
+    <VersionMajor>1</VersionMajor>
     <VersionMinor>0</VersionMinor>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <!-- The $(VersionPatch), $(VersionRevision), $(CI_BUILD_NUMBER), and
-    $(BuildDate) properties are typically defined by an automated (CI) build in
-    the build/version.props file. Setting them here will override those values.
-    -->
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <VersionPrefix>$(VersionMajor).$(VersionMinor)</VersionPrefix>
-    <VersionSuffix></VersionSuffix>
   </PropertyGroup>
 
   <!-- Defines properties which help customize the version update process. -->
   <PropertyGroup>
-    <GenerateReleaseNotes Condition="'$(GenerateReleaseNotes)' == ''">true</GenerateReleaseNotes>
+    <GenerateReleaseNotes Condition="'$(GenerateReleaseNotes)' == ''">false</GenerateReleaseNotes>
     <GenerateAssemblyBuildDateAttribute Condition="'$(GenerateAssemblyBuildDateAttribute)' == ''">true</GenerateAssemblyBuildDateAttribute>
+    <VersionStrategy Condition="'$(VersionStrategy)' == ''">ShortDate</VersionStrategy>
   </PropertyGroup>
 
   <!-- The UpdateReleaseNotes target expects a single XML file as input and
-  one or more destination folders as output, as defined by the ItemGroup.
-  Uncomment this item group and change the path as necessary. -->
-  <ItemGroup Condition="'$(GenerateReleaseNotes)' == 'true'">
-    <ReleaseNotes Include="$(SolutionDir)/ReleaseNotes.xml" />
-    <DestinationFolders Include="$(SolutionDir)/SABOL.Web.Siemens/App_Data" />
-  </ItemGroup>
+    one or more destination folders as output, as defined by the ItemGroup.
+    Uncomment this item group and change the path as necessary. -->
+    <ItemGroup Condition="'$(GenerateReleaseNotes)' == 'true'">
+      <ReleaseNotes Include="$(SolutionDir)/ReleaseNotes.xml" />
+      <DestinationFolders Include="$(SolutionDir)/SABOL.Web.Siemens/App_Data" />
+    </ItemGroup>
 </Project>

@@ -2,16 +2,14 @@
 WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
          created a backup copy. Incorrect changes to this file will make it
          impossible to load or build your projects from the command-line or the IDE.
-
 -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
-    <RepoRelativeProjectDir>$([MSBuild]::MakeRelative($(RepoRoot), $(MSBuildProjectDirectory)))</RepoRelativeProjectDir>
-    <BuildDir>$(RepoRoot)build</BuildDir>
-    <VersionProps>$(BuildDir)\version.props</VersionProps>
-    <CommonProps>$(RepoRoot)\common.props</CommonProps>
-    <MiscProps>$(RepoRoot)\misc.props</MiscProps>
+    <BuildDir>$(RepoRoot)build\</BuildDir>
+    <VersionProps>$(BuildDir)version.props</VersionProps>
+    <CommonProps>$(RepoRoot)common.props</CommonProps>
+    <MiscProps>$(RepoRoot)misc.props</MiscProps>
   </PropertyGroup>
 
   <Import Project="$(VersionProps)" Condition="Exists('$(VersionProps)')"/>
@@ -20,12 +18,47 @@ WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and 
 
   <PropertyGroup>
     <DebugType>embedded</DebugType>
+    <!-- See https://blog.paranoidcoding.com/2016/04/05/deterministic-builds-in-roslyn.html
+    for more details on setting Deterministic. -->
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
 
+  <!-- Define default values if any of these are blank. -->
   <PropertyGroup>
-    <VersionPrefix Condition="'$(VersionPrefix)' != ''">$(VersionPrefix).$(VersionPatch).$(VersionRevision)</VersionPrefix>
-    <VersionSuffix Condition="'$(VersionSuffix)' != '' AND '$(CI_BUILD_NUMBER)' != ''">$(VersionSuffix)+$(CI_BUILD_NUMBER)</VersionSuffix>
+    <VersionMajor Condition="'$(VersionMajor)' == ''">1</VersionMajor>
+    <VersionMinor Condition="'$(VersionMinor)' == ''">0</VersionMinor>
+    <VersionPatch Condition="'$(VersionPatch)' == ''">0</VersionPatch>
   </PropertyGroup>
+
+  <!-- Define the default $(VersionPrefix) format. The $(PackageVersion) is
+  also set here to prevent it from accidentally getting the $(VersionRevision)
+  value, allowing it to conform to SemVer 2.0 syntax.
+  -->
+  <PropertyGroup>
+    <VersionPrefix Condition="'$(VersionPrefix)' == ''">$(VersionMajor).$(VersionMinor).$(VersionPatch)</VersionPrefix>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">$(VersionPrefix)</PackageVersion>
+  </PropertyGroup>
+
+  <!-- Add $(VersionRevision) to $(VersionPrefix) if they are both set. -->
+  <PropertyGroup Condition="'$(VersionPrefix)' != ''">
+    <VersionPrefix Condition="'$(VersionRevision)' != ''">$(VersionPrefix).$(VersionRevision)</VersionPrefix>
+  </PropertyGroup>
+
+  <!-- If $(VersionSuffix) isn't empty, then add $(VersionRevision) to it if
+  it isn't also empty. Add $(VersionSuffix) to the $(PackageVersion) and, if
+  it's set also add the $(SourceRevisionId). -->
+  <PropertyGroup Condition="'$(VersionSuffix)' != ''">
+    <VersionSuffix Condition="'$(VersionRevision)' != ''">$(VersionSuffix).$(VersionRevision)</VersionSuffix>
+    <PackageVersion>$(VersionPrefix)-$(VersionSuffix)</PackageVersion>
+    <PackageVersion Condition="'$(SourceRevisionId)' != ''">$(PackageVersion).$(SourceRevisionId)</PackageVersion>
+  </PropertyGroup>
+
+  <!-- The $(VersionPrefix) and $(VersionSuffix) rules here may seem odd, and
+  possibly redundant, but they're necessary in order to ensure the compiled
+  binary version is a proper 4-part version number, the product version is the
+  propert 4-part version number with the suffix, and possibly the
+  $(SourceRevisionId), appended, and that the package version is a proper
+  3-part version (SemVer 2.0 compliant format) with optionally the suffix. -->
 
   <!-- Adds the build date to the generated AssemblyInfo file, if the project
   has the $(GenerateAssemblyInfo) property set to true. This indirectly hooks
