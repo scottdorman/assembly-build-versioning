@@ -12,8 +12,10 @@ WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and 
     <CommonProps>$(RepoRoot)common.props</CommonProps>
     <MiscProps>$(RepoRoot)misc.props</MiscProps>
     <SourceLinkProps>$(BuildDir)sourcelink.props</SourceLinkProps>
+    <DebugTargetProps>$(RepoRoot)debugtarget.props</DebugTargetProps>
   </PropertyGroup>
 
+  <Import Project="$(DebugTargetProps)" Condition="Exists('$(DebugTargetProps)')"/>
   <Import Project="$(BuildProps)" Condition="Exists('$(BuildProps)')"/>
   <Import Project="$(VersionProps)" Condition="Exists('$(VersionProps)')"/>
   <Import Project="$(CommonProps)" Condition="Exists('$(CommonProps)')"/>
@@ -23,6 +25,14 @@ WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and 
     <DebugType Condition="'$(SourceLinkCreate)' != 'true'">embedded</DebugType>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- Add the default warnings to ignore if they aren't already there. -->
+    <NoWarn Condition="'$(NoWarn)' == ''">1701;1702</NoWarn>
+
+    <!-- NU5105: we're explicitly opting in to semver2 -->
+    <NoWarn>$(NoWarn);NU5105</NoWarn>
+  </PropertyGroup>
+  
   <!-- Define default values if any of these are blank. -->
   <PropertyGroup>
     <VersionMajor Condition="'$(VersionMajor)' == ''">1</VersionMajor>
@@ -48,6 +58,7 @@ WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and 
   it isn't also empty. Add $(VersionSuffix) to the $(PackageVersion) and, if
   it's set also add the $(SourceRevisionId). -->
   <PropertyGroup Condition="'$(VersionSuffix)' != ''">
+    <VersionSuffix Condition="'$(VersionBuild)' != ''">$(VersionSuffix).$(VersionBuild)</VersionSuffix>
     <VersionSuffix Condition="'$(VersionRevision)' != ''">$(VersionSuffix).$(VersionRevision)</VersionSuffix>
     <PackageVersion>$(VersionPrefix)-$(VersionSuffix)</PackageVersion>
     <PackageVersion Condition="'$(SourceRevisionId)' != ''">$(PackageVersion).$(SourceRevisionId)</PackageVersion>
