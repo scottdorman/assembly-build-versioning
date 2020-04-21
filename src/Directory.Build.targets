@@ -2,7 +2,7 @@
   <PropertyGroup>
     <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
     <BuildDir>$([MSBuild]::EnsureTrailingSlash($(RepoRoot)build))</BuildDir>
-    <DebugEchoTargets>$(BuildDir)DebugEcho.targets</DebugEchoTargets>
+    <DebugEchoTargets>$(BuildDir)Cadru.DebugEcho.targets</DebugEchoTargets>
   </PropertyGroup>
 
     <Import Project="$(DebugEchoTargets)" Condition="Exists('$(DebugEchoTargets)')"/>

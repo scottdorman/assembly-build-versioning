@@ -71,6 +71,11 @@ WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and 
   $(SourceRevisionId), appended, and that the package version is a proper
   3-part version (SemVer 2.0 compliant format) with optionally the suffix. -->
 
+  <PropertyGroup Condition=" '$(Version)' == '' ">
+    <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix)-$(VersionSuffix)</Version>
+    <Version Condition=" '$(VersionSuffix)' == '' ">$(VersionPrefix)</Version>
+  </PropertyGroup>
+
   <!-- Adds the build date to the generated AssemblyInfo file, if the project
   has the $(GenerateAssemblyInfo) property set to true. This indirectly hooks
   in to the standard .NET SDK GenerateAssemblyInfo target by using the same
