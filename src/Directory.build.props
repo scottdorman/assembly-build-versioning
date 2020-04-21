@@ -21,9 +21,6 @@ WARNING: DO NOT MODIFY this file unless you are knowledgeable about MSBuild and 
 
   <PropertyGroup>
     <DebugType Condition="'$(SourceLinkCreate)' != 'true'">embedded</DebugType>
-    <!-- See https://blog.paranoidcoding.com/2016/04/05/deterministic-builds-in-roslyn.html
-    for more details on setting Deterministic. -->
-    <Deterministic>true</Deterministic>
   </PropertyGroup>
 
   <!-- Define default values if any of these are blank. -->
