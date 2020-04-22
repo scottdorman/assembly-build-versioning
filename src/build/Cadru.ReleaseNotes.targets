@@ -26,6 +26,12 @@ IDE. -->
   <Target Name="UpdateReleaseNotes" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release' and '$(GenerateReleaseNotes)' == 'true'">
     <AddReleaseNotesRootEntry AddIfNotFound="true" Version="$(Version)" BuildDate="$(BuildDate)" Milestone="$(Milestone)" File="%(ReleaseNotes.Identity)" />
     <Copy SourceFiles="@(ReleaseNotes)" DestinationFolder="%(DestinationFolders.Identity)" />
+  </Target>
+
+  <Target Name="_AddReleaseNotesContentItem" Inputs="%(ReleaseNotes.Identity)" DependsOnTargets="UpdateReleaseNotes">
+    <PropertyGroup>
+      <_ReleaseNotesFile>%(ReleaseNotes.Identity)</_ReleaseNotesFile>
+    </PropertyGroup>
     <ItemGroup>
       <Content Include="@(DestinationFolders->'%(Identity)@(ReleaseNotes)')"/>
     </ItemGroup>
