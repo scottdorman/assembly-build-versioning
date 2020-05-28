@@ -11,8 +11,10 @@ IDE. -->
     <CommonProps>$(RepoRelativeProjectDir)\common.props</CommonProps>
   </PropertyGroup>
 
-  <Import Project="$(BuildProps)" Condition="Exists('$(BuildProps)')"/>
-  <Import Project="$(CommonProps)" Condition="Exists('$(CommonProps)')"/>
+  <ImportGroup Condition="'$(SharedPropsImported)' != 'true'">
+    <Import Project="$(BuildProps)" Condition="Exists('$(BuildProps)')"/>
+    <Import Project="$(CommonProps)" Condition="Exists('$(CommonProps)')"/>
+  </ImportGroup>
 
   <PropertyGroup>
     <VersionUpdateTasksLib Condition="'$(OS)' == 'Windows_NT'">$([MSBUILD]::Unescape($(BuildDir)\Cadru.Build.Tasks.dll))</VersionUpdateTasksLib>
@@ -33,7 +35,7 @@ IDE. -->
       <_ReleaseNotesFile>%(ReleaseNotes.Identity)</_ReleaseNotesFile>
     </PropertyGroup>
     <ItemGroup>
-      <Content Include="@(DestinationFolders->'%(Identity)@(ReleaseNotes)')"/>
+      <Content Include="@(DestinationFolders->'%(Identity)$(_ReleaseNotesFile)"/>
     </ItemGroup>
   </Target>
 </Project>

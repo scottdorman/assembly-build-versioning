@@ -23,6 +23,10 @@ IDE. -->
   <Import Project="$(MiscProps)" Condition="Exists('$(MiscProps)')"/>
 
   <PropertyGroup>
+    <SharedPropsImported>true</SharedPropsImported>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <DebugType Condition="'$(SourceLinkCreate)' != 'true'">embedded</DebugType>
   </PropertyGroup>
 
