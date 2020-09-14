@@ -6,11 +6,9 @@ I've setup build actions for two private repositories I work in, and after under
 
 This time around, it takes advantage of the actions workflow and requires even less changes to your projects.
 
-One of the main changes is that the code tasks have now been moved into a compiled assembly that will become part of my Cadru Framework. This allows it to fully run from the command line through calling the `dotnet` command line tooling. The second major change is that it no longer requires you to add a project to your solution to try and hook into the build process. Since there wasn't a reliable way to insert the target into the process of building the solution, it ended up running for each project. While this generally didn't cause much issue, it would sometimes result in slightly different version numbers.
+One of the main changes is that the code tasks have now been moved into a compiled assembly that will become part of my Cadru Framework. This allows it to fully run from the command line through calling the `dotnet` command line tooling. The second major change is that it no longer requires you to add a project to your solution to try and hook into the build process. Since there wasn't a reliable way to insert the target into the process of building the solution, it ended up running for each project. While this generally didn't cause much issue, it would sometimes result in slightly different version numbers. For those who need, or want to see, the source code for the `Cadru.Build.Tasks` project, it's [available](https://github.com/scottdorman/cadru/tree/master/src/Cadru.Build.Tasks) on GitHub as well.
 
 Just like with the earlier implementation, head over to the GitHub [repository](https://github.com/scottdorman/assembly-build-versioning) and copy the contents of `src` folder (not the folder itself, just what's in it) into your solution folder. If you don't want the task to update a release notes XML file, you can delete the `ReleaseNotes.xml` file. Although the files have changed slightly from their earlier versions, they still work pretty much the same way.
-
-For those who need, or want to see, the source code for the `Cadru.Build.Tasks` project, it's [available](https://github.com/scottdorman/cadru/tree/master/src/Cadru.Build.Tasks) on GitHub as well.
 
 > The original implementation is still there, but it's under a `v1.0` branch. The `master` branch is the latest version, 2.0.
 
